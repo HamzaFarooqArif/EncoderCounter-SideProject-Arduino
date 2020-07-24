@@ -1,8 +1,9 @@
- #define outputA 12
- #define outputB 11
- #define outputZ 10
+//Encoder pin configuration
+int outputA = 12;
+int outputB = 11;
+int outputZ = 10;
 
-//Encoder Configuration
+//Machine Configuration
 int totalPulse = 2048;
 int totalDevices = 10;
 
@@ -11,6 +12,9 @@ int led1=2;
 int led2=3;
 int led3=4;
 int led4=5;
+
+//Debugging
+bool enablePrint = false;
 
 void toBinaryPins(int val)
 {
@@ -128,9 +132,9 @@ void toBinaryPins(int val)
   }
 }
  
- int counter = 0;
- int previousPulseCounter = 0;
- int pulseCounter = 0;
+ int counter;
+ int previousPulseCounter;
+ int pulseCounter;
  int aState;
  int aLastState;  
  int zState;
@@ -141,7 +145,10 @@ void toBinaryPins(int val)
   if(digitalRead(outputZ))
   {
     pulseCounter = 0;
+    counter = 1;
     isHome = true;
+    toBinaryPins(counter);
+    //Serial.println(counter);
     return;
   }
   
@@ -152,30 +159,54 @@ void toBinaryPins(int val)
     if (digitalRead(outputB) != aState) {
       previousPulseCounter = pulseCounter;
       pulseCounter ++;
-      if(abs(pulseCounter) == (totalPulse*(float)1/4) || abs(pulseCounter) == (totalPulse*(float)3/4))
-      {
-        if(previousPulseCounter != pulseCounter)
+      for(int i = 1; i < totalDevices + 1; i++)
         {
-          counter++;
-          toBinaryPins(counter);
-          Serial.println(counter);
+          int pulses;
+          if(pulseCounter < 0) pulses =  totalPulse + pulseCounter;
+          else pulses = pulseCounter;
+          if(pulses == (((totalPulse/totalDevices)*i)-((totalPulse/totalDevices)/2)))
+          {
+           if(previousPulseCounter != pulseCounter)
+            {
+              if(totalDevices >= i + 1) counter = i + 1;
+              else counter = 1;
+
+              toBinaryPins(counter);
+              if(enablePrint)
+              {
+                Serial.print(pulseCounter);
+                Serial.print("\t");
+                Serial.println(counter);  
+              }
+            } 
+          }
         }
-      }
      } 
      else 
      {
        previousPulseCounter = pulseCounter;
        pulseCounter --;
-       if(abs(pulseCounter) == (totalPulse*(float)1/4) || abs(pulseCounter) == (totalPulse*(float)3/4))
-       {
-        if(previousPulseCounter != pulseCounter)
+       for(int i = 1; i < totalDevices + 1; i++)
         {
-          counter--;
-          toBinaryPins(counter);
-          Serial.println(counter);
+          int pulses;
+          if(pulseCounter < 0) pulses =  totalPulse + pulseCounter;
+          else pulses = pulseCounter;
+          if(pulses == (((totalPulse/totalDevices)*i)-((totalPulse/totalDevices)/2)))
+          {
+           if(previousPulseCounter != pulseCounter)
+            {
+              counter = i;
+              toBinaryPins(counter);
+              if(enablePrint)
+              {
+                Serial.print(pulseCounter);
+                Serial.print("\t");
+                Serial.println(counter);  
+              }  
+            } 
+          }
         }
-       }
-     } 
+       } 
    }
    aLastState = aState;  
   }
